@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -85,18 +85,6 @@
       }
     });
 
-    new Swiper(".testimonial-swiper", {
-      slidesPerView: 1,
-      spaceBetween: 18,
-      loop: true,
-      pagination: { el: ".testimonial-swiper .swiper-pagination", clickable: true },
-      autoplay: prefersReducedMotion ? false : { delay: 4200, disableOnInteraction: false },
-      breakpoints: {
-        768: { slidesPerView: 2 },
-        1100: { slidesPerView: 3 }
-      }
-    });
-
     initScreenshotGallery();
   }
 
@@ -106,14 +94,14 @@
 
     const galleries = {
       devotee: [
-        { src: "img/samagrah%20app.png", alt: "Samagrah devotee app home screen" },
+        { src: "img/samagran%20app.png", alt: "Samagran devotee app home screen" },
         { src: "img/pooja%20thali.jpg", alt: "Puja Samagri browsing preview" },
         { src: "img/pooja.jpg", alt: "Puja booking preview" },
         { src: "img/pandit.jpg", alt: "Online Puja preview" }
       ],
       pandit: [
-        { src: "img/pujaari%20app.png", alt: "Samagrah Pandit app home screen" },
-        { src: "img/poojari.jpg", alt: "Pandit profile preview" },
+        { src: "img/pujari%20app.png", alt: "Samagran Pandit app home screen" },
+        { src: "img/pujari.jpg", alt: "Pandit profile preview" },
         { src: "img/pandit.jpg", alt: "Online Puja management preview" },
         { src: "img/kalas.jpg", alt: "Pandit service setup preview" }
       ]
@@ -179,7 +167,7 @@
       ease: "sine.inOut"
     });
 
-    gsap.utils.toArray(".section-heading, .app-showcase, .service-card, .samagri-pin, .step, .benefit-layout article, .testimonial-card").forEach((el) => {
+    gsap.utils.toArray(".section-heading, .gita-quote, .app-showcase, .service-card, .samagri-pin, .step, .benefit-layout article").forEach((el) => {
       gsap.from(el, {
         scrollTrigger: { trigger: el, start: "top 86%" },
         opacity: 0,
@@ -224,6 +212,69 @@
     });
   });
 
+  function initPartnerForm() {
+    const modalEl = document.getElementById("partnerModal");
+    const form = document.getElementById("partnerForm");
+    if (!modalEl || !form) return;
+
+    const status = form.querySelector(".partner-status");
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    document.querySelectorAll("[data-partner-trigger]").forEach((trigger) => {
+      trigger.addEventListener("click", () => {
+        const offcanvasEl = document.getElementById("mobileNav");
+        if (offcanvasEl && window.bootstrap) {
+          const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+          offcanvas?.hide();
+        }
+        if (window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      });
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      form.classList.add("was-validated");
+      status.className = "partner-status";
+
+      if (!form.checkValidity()) {
+        status.textContent = "Please complete all required fields correctly.";
+        status.classList.add("error");
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = "Sending...";
+      status.textContent = "Opening your email client...";
+
+      const data = new FormData(form);
+      const body = [
+        `Name: ${data.get("name")}`,
+        `Contact Details: ${data.get("contact")}`,
+        `Email: ${data.get("email")}`,
+        "",
+        "Description:",
+        data.get("description")
+      ].join("\n");
+
+      try {
+        const mailto = `mailto:support@samagran.com?subject=${encodeURIComponent("Partner With Us Enquiry")}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailto;
+
+        window.setTimeout(() => {
+          status.textContent = "Success. Your email draft has been opened for support@samagran.com.";
+          status.classList.add("success");
+          submitButton.disabled = false;
+          submitButton.textContent = "Send";
+        }, 700);
+      } catch (error) {
+        status.textContent = "Error. Please email support@samagran.com directly.";
+        status.classList.add("error");
+        submitButton.disabled = false;
+        submitButton.textContent = "Send";
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     updateChrome();
     setActiveNav();
@@ -231,5 +282,7 @@
     initCounters();
     initSwipers();
     initGsap();
+    initPartnerForm();
   });
 })();
+
