@@ -219,7 +219,8 @@
 
     const status = form.querySelector(".partner-status");
     const submitButton = form.querySelector('button[type="submit"]');
-    const partnerApiUrl = "https://samagran-backend.vercel.app/api/partner-with-us";
+    const apiBaseUrl = window.SAMAGRAN_CONFIG?.API_BASE_URL || "https://samagran-backend.vercel.app";
+    const partnerApiUrl = `${apiBaseUrl.replace(/\/$/, "")}/api/partner-with-us`;
 
     document.querySelectorAll("[data-partner-trigger]").forEach((trigger) => {
       trigger.addEventListener("click", () => {
