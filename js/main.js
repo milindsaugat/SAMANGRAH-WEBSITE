@@ -219,7 +219,7 @@
 
     const status = form.querySelector(".partner-status");
     const submitButton = form.querySelector('button[type="submit"]');
-    const partnerApiUrl = "http://172.18.112.1:8000/api/partner-with-us";
+    const partnerApiUrl = "https://samagran-backend.vercel.app/api/partner-with-us";
 
     document.querySelectorAll("[data-partner-trigger]").forEach((trigger) => {
       trigger.addEventListener("click", () => {
@@ -256,8 +256,12 @@
       };
 
       try {
+        if (window.location.protocol === "https:" && partnerApiUrl.startsWith("http://")) {
+          throw new Error("MIXED_CONTENT_API_URL");
+        }
+
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+        const timeoutId = window.setTimeout(() => controller.abort(), 45000);
 
         const response = await fetch(partnerApiUrl, {
           method: "POST",
@@ -277,9 +281,12 @@
         form.classList.remove("was-validated");
       } catch (error) {
         const isTimeout = error.name === "AbortError";
-        status.textContent = isTimeout
-          ? "Error. Partner API connection timed out."
-          : "Error. Partner API is not reachable right now.";
+        const isMixedContent = error.message === "MIXED_CONTENT_API_URL";
+        status.textContent = isMixedContent
+          ? "Error. API must use HTTPS on the live website."
+          : isTimeout
+            ? "Error. Partner API connection timed out. Please check backend server."
+            : "Error. Partner API is not reachable right now.";
         status.classList.add("error");
         console.error(error);
       } finally {
