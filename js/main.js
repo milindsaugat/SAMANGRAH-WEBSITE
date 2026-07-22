@@ -219,6 +219,7 @@
 
     const status = form.querySelector(".partner-status");
     const submitButton = form.querySelector('button[type="submit"]');
+    const partnerApiUrl = "http://172.18.112.1:8000/api/partner-with-us";
 
     document.querySelectorAll("[data-partner-trigger]").forEach((trigger) => {
       trigger.addEventListener("click", () => {
@@ -231,7 +232,7 @@
       });
     });
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
       form.classList.add("was-validated");
       status.className = "partner-status";
@@ -244,31 +245,44 @@
 
       submitButton.disabled = true;
       submitButton.textContent = "Sending...";
-      status.textContent = "Opening your email client...";
+      status.textContent = "Submitting your request...";
 
       const data = new FormData(form);
-      const body = [
-        `Name: ${data.get("name")}`,
-        `Contact Details: ${data.get("contact")}`,
-        `Email: ${data.get("email")}`,
-        "",
-        "Description:",
-        data.get("description")
-      ].join("\n");
+      const payload = {
+        name: String(data.get("name") || "").trim(),
+        contactDetails: String(data.get("contactDetails") || "").trim(),
+        email: String(data.get("email") || "").trim(),
+        description: String(data.get("description") || "").trim()
+      };
 
       try {
-        const mailto = `mailto:support@samagran.com?subject=${encodeURIComponent("Partner With Us Enquiry")}&body=${encodeURIComponent(body)}`;
-        window.location.href = mailto;
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 12000);
 
-        window.setTimeout(() => {
-          status.textContent = "Success. Your email draft has been opened for support@samagran.com.";
-          status.classList.add("success");
-          submitButton.disabled = false;
-          submitButton.textContent = "Send";
-        }, 700);
+        const response = await fetch(partnerApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        window.clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Partner API failed with ${response.status}`);
+        }
+
+        status.textContent = "Success. Your partner request has been submitted.";
+        status.classList.add("success");
+        form.reset();
+        form.classList.remove("was-validated");
       } catch (error) {
-        status.textContent = "Error. Please email support@samagran.com directly.";
+        const isTimeout = error.name === "AbortError";
+        status.textContent = isTimeout
+          ? "Error. Partner API connection timed out."
+          : "Error. Partner API is not reachable right now.";
         status.classList.add("error");
+        console.error(error);
+      } finally {
         submitButton.disabled = false;
         submitButton.textContent = "Send";
       }
