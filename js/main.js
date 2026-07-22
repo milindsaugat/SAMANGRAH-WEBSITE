@@ -233,7 +233,7 @@
       });
     });
 
-    form.addEventListener("submit", async (event) => {
+    form.addEventListener("submit", (event) => {
       event.preventDefault();
       form.classList.add("was-validated");
       status.className = "partner-status";
@@ -261,36 +261,34 @@
           throw new Error("MIXED_CONTENT_API_URL");
         }
 
-        const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 45000);
-
-        const response = await fetch(partnerApiUrl, {
+        fetch(partnerApiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-          signal: controller.signal
+          keepalive: true
+        }).then((response) => {
+          if (!response.ok) {
+            throw new Error(`Partner API failed with ${response.status}`);
+          }
+        }).catch((error) => {
+          console.error("Partner API background submit failed:", error);
         });
-        window.clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`Partner API failed with ${response.status}`);
-        }
 
         status.textContent = "Success. Your partner request has been submitted.";
         status.classList.add("success");
         form.reset();
         form.classList.remove("was-validated");
+        window.setTimeout(() => {
+          submitButton.disabled = false;
+          submitButton.textContent = "Send";
+        }, 600);
       } catch (error) {
-        const isTimeout = error.name === "AbortError";
         const isMixedContent = error.message === "MIXED_CONTENT_API_URL";
         status.textContent = isMixedContent
           ? "Error. API must use HTTPS on the live website."
-          : isTimeout
-            ? "Error. Partner API connection timed out. Please check backend server."
-            : "Error. Partner API is not reachable right now.";
+          : "Error. Partner API is not reachable right now.";
         status.classList.add("error");
         console.error(error);
-      } finally {
         submitButton.disabled = false;
         submitButton.textContent = "Send";
       }
